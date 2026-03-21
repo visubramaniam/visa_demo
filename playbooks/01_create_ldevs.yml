@@ -1,0 +1,40 @@
+---
+####################################################################
+# Playbook 1: Create LDEVs on VSP One Block 28
+# Creates 10 LDEVs of 10GB each for NVMe/TCP namespaces
+####################################################################
+- name: Create LDEVs on VSP One Block 28
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - ../ansible_vault_vars/ansible_vault_storage_var.yml
+    - vars/storage_vars.yml
+
+  vars:
+    connection_info:
+      address: "{{ storage_address }}"
+      username: "{{ vault_storage_username }}"
+      password: "{{ vault_storage_secret }}"
+
+  tasks:
+    ####################################################################
+    # Task: Create LDEVs using a loop
+    ####################################################################
+    - name: Create LDEVs for NVMe/TCP namespaces
+      hitachivantara.vspone_block.vsp.hv_ldev:
+        connection_info: "{{ connection_info }}"
+        state: present
+        spec:
+          ldev_id: "{{ ldev_start_id + item }}"
+          pool_id: "{{ pool_id }}"
+          size: "{{ ldev_size }}"
+          name: "{{ ldev_name_prefix }}_{{ '%04d' | format(ldev_start_id + item) }}"
+      loop: "{{ range(0, ldev_count) | list }}"
+      register: ldev_results
+
+    - name: Display created LDEV details
+      ansible.builtin.debug:
+        msg: "LDEV {{ ldev_start_id + item }} created successfully"
+      loop: "{{ range(0, ldev_count) | list }}"
+      when: ldev_results.results[item] is defined

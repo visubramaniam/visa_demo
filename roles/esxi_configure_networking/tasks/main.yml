@@ -1,0 +1,89 @@
+---
+####################################################################
+# Role: esxi_configure_networking
+# Creates vSwitches and VMkernel adapters for 100Gbps NVMe/TCP NICs
+####################################################################
+
+- name: Create vSwitch1 for NVMe/TCP (first 100G NIC)
+  community.vmware.vmware_vswitch:
+    hostname: "{{ esxi_hostname }}"
+    username: "{{ vault_esxi_username }}"
+    password: "{{ vault_esxi_password }}"
+    validate_certs: false
+    esxi_hostname: "{{ esxi_hostname }}"
+    switch: "{{ vswitch1_name }}"
+    nics:
+      - "{{ vmnic_100g_1 }}"
+    mtu: "{{ vswitch_mtu }}"
+    state: present
+
+- name: Create vSwitch2 for NVMe/TCP (second 100G NIC)
+  community.vmware.vmware_vswitch:
+    hostname: "{{ esxi_hostname }}"
+    username: "{{ vault_esxi_username }}"
+    password: "{{ vault_esxi_password }}"
+    validate_certs: false
+    esxi_hostname: "{{ esxi_hostname }}"
+    switch: "{{ vswitch2_name }}"
+    nics:
+      - "{{ vmnic_100g_2 }}"
+    mtu: "{{ vswitch_mtu }}"
+    state: present
+
+- name: Create VMkernel adapter 1 on vSwitch1
+  community.vmware.vmware_vmkernel:
+    hostname: "{{ esxi_hostname }}"
+    username: "{{ vault_esxi_username }}"
+    password: "{{ vault_esxi_password }}"
+    validate_certs: false
+    esxi_hostname: "{{ esxi_hostname }}"
+    vswitch_name: "{{ vswitch1_name }}"
+    portgroup_name: "{{ vmk1_portgroup }}"
+    mtu: "{{ vswitch_mtu }}"
+    network:
+      type: static
+      ip_address: "{{ vmk1_ip }}"
+      subnet_mask: "{{ vmk1_subnet }}"
+    enable_ft: false
+    enable_mgmt: false
+    enable_vmotion: false
+    enable_vsan: false
+    state: present
+
+- name: Create VMkernel adapter 2 on vSwitch2
+  community.vmware.vmware_vmkernel:
+    hostname: "{{ esxi_hostname }}"
+    username: "{{ vault_esxi_username }}"
+    password: "{{ vault_esxi_password }}"
+    validate_certs: false
+    esxi_hostname: "{{ esxi_hostname }}"
+    vswitch_name: "{{ vswitch2_name }}"
+    portgroup_name: "{{ vmk2_portgroup }}"
+    mtu: "{{ vswitch_mtu }}"
+    network:
+      type: static
+      ip_address: "{{ vmk2_ip }}"
+      subnet_mask: "{{ vmk2_subnet }}"
+    enable_ft: false
+    enable_mgmt: false
+    enable_vmotion: false
+    enable_vsan: false
+    state: present
+
+- name: Tag VMkernel adapter 1 for NVMe/TCP traffic
+  community.vmware.vmware_host_command:
+    hostname: "{{ esxi_hostname }}"
+    username: "{{ vault_esxi_username }}"
+    password: "{{ vault_esxi_password }}"
+    validate_certs: false
+    commands:
+      - "esxcli network ip interface tag add -i vmk1 -t NVMeTCP"
+
+- name: Tag VMkernel adapter 2 for NVMe/TCP traffic
+  community.vmware.vmware_host_command:
+    hostname: "{{ esxi_hostname }}"
+    username: "{{ vault_esxi_username }}"
+    password: "{{ vault_esxi_password }}"
+    validate_certs: false
+    commands:
+      - "esxcli network ip interface tag add -i vmk2 -t NVMeTCP"

@@ -1,0 +1,91 @@
+---
+####################################################################
+# Playbook 6: Add NVMe/TCP Target Controllers on ESXi Host
+# Connects ESXi to VSP One Block 28 NVMe/TCP subsystem
+# Adds one controller per storage port for multipath
+####################################################################
+- name: Add NVMe/TCP Target Controllers on ESXi Host
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - ../ansible_vault_vars/ansible_vault_esxi_var.yml
+    - vars/esxi_vars.yml
+
+  tasks:
+    ####################################################################
+    # Task: Add NVMe/TCP controller for Storage Port 1 (CL3-A)
+    ####################################################################
+    - name: Add NVMe/TCP controller for storage port 1
+      community.vmware.vmware_host_command:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        commands:
+          - >-
+            esxcli nvme fabrics connect
+            --adapter vmhba64
+            --transport-address {{ storage_port1_ip }}
+            --transport-port {{ nvme_tcp_port }}
+            --host-traddr {{ vmk1_ip }}
+            --subnqn {{ subsystem_nqn }}
+      register: controller1_result
+
+    - name: Display controller 1 result
+      ansible.builtin.debug:
+        var: controller1_result
+
+    ####################################################################
+    # Task: Add NVMe/TCP controller for Storage Port 2 (CL4-A)
+    ####################################################################
+    - name: Add NVMe/TCP controller for storage port 2
+      community.vmware.vmware_host_command:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        commands:
+          - >-
+            esxcli nvme fabrics connect
+            --adapter vmhba65
+            --transport-address {{ storage_port2_ip }}
+            --transport-port {{ nvme_tcp_port }}
+            --host-traddr {{ vmk2_ip }}
+            --subnqn {{ subsystem_nqn }}
+      register: controller2_result
+
+    - name: Display controller 2 result
+      ansible.builtin.debug:
+        var: controller2_result
+
+    ####################################################################
+    # Task: Verify NVMe/TCP controllers and namespaces
+    ####################################################################
+    - name: Verify NVMe/TCP controllers
+      community.vmware.vmware_host_command:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        commands:
+          - "esxcli nvme fabrics list"
+      register: nvme_fabrics_list
+
+    - name: Display connected NVMe/TCP controllers
+      ansible.builtin.debug:
+        var: nvme_fabrics_list
+
+    - name: Verify NVMe/TCP namespaces visible to ESXi
+      community.vmware.vmware_host_command:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        commands:
+          - "esxcfg-mpath -b"
+      register: nvme_namespaces
+
+    - name: Display NVMe/TCP namespaces
+      ansible.builtin.debug:
+        var: nvme_namespaces

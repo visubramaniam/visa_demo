@@ -1,0 +1,22 @@
+---
+####################################################################
+# Role: vsp_create_nvm_subsystem
+# Creates NVM Subsystem with ports and host NQN on VSP One Block 28
+####################################################################
+
+- name: Create NVM Subsystem with ports and host NQN
+  hitachivantara.vspone_block.vsp.hv_nvm_subsystems:
+    connection_info: "{{ connection_info }}"
+    spec:
+      name: "{{ nvm_subsystem_name }}"
+      ports: "{{ storage_ports }}"
+      host_mode: "{{ nvm_subsystem_host_mode }}"
+      enable_namespace_security: true
+      host_nqns:
+        - nqn: "{{ host_nqn }}"
+          nickname: "{{ host_nqn_nickname }}"
+  register: nvm_subsystem_result
+
+- name: Display NVM Subsystem creation result
+  ansible.builtin.debug:
+    var: nvm_subsystem_result

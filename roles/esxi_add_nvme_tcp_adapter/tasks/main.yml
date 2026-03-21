@@ -1,0 +1,33 @@
+---
+####################################################################
+# Role: esxi_add_nvme_tcp_adapter
+# Adds the software NVMe over TCP adapter on the ESXi host
+####################################################################
+
+- name: Add Software NVMe over TCP Adapter via esxcli
+  community.vmware.vmware_host_command:
+    hostname: "{{ esxi_hostname }}"
+    username: "{{ vault_esxi_username }}"
+    password: "{{ vault_esxi_password }}"
+    validate_certs: false
+    commands:
+      - "esxcli nvme fabrics enable --protocol TCP --device {{ vmnic_100g_1 }}"
+  register: nvme_adapter_result
+
+- name: Display NVMe/TCP adapter result
+  ansible.builtin.debug:
+    var: nvme_adapter_result
+
+- name: Verify NVMe/TCP adapter status
+  community.vmware.vmware_host_command:
+    hostname: "{{ esxi_hostname }}"
+    username: "{{ vault_esxi_username }}"
+    password: "{{ vault_esxi_password }}"
+    validate_certs: false
+    commands:
+      - "esxcli nvme adapter list"
+  register: nvme_adapter_list
+
+- name: Display NVMe adapter list
+  ansible.builtin.debug:
+    var: nvme_adapter_list

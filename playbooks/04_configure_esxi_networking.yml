@@ -1,0 +1,143 @@
+---
+####################################################################
+# Playbook 4: Configure ESXi Networking for NVMe/TCP
+# Creates vSwitches and VMkernel adapters for 100Gbps NICs
+# One vSwitch per NIC for proper NVMe/TCP port binding
+####################################################################
+- name: Configure ESXi Networking for NVMe/TCP
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - ../ansible_vault_vars/ansible_vault_esxi_var.yml
+    - vars/esxi_vars.yml
+
+  tasks:
+    ####################################################################
+    # Task: Create vSwitch1 with first 100Gbps NIC
+    ####################################################################
+    - name: Create vSwitch1 for NVMe/TCP (first 100G NIC)
+      community.vmware.vmware_vswitch:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        esxi_hostname: "{{ esxi_hostname }}"
+        switch: "{{ vswitch1_name }}"
+        nics:
+          - "{{ vmnic_100g_1 }}"
+        mtu: "{{ vswitch_mtu }}"
+        state: present
+      register: vswitch1_result
+
+    - name: Display vSwitch1 result
+      ansible.builtin.debug:
+        var: vswitch1_result
+
+    ####################################################################
+    # Task: Create vSwitch2 with second 100Gbps NIC
+    ####################################################################
+    - name: Create vSwitch2 for NVMe/TCP (second 100G NIC)
+      community.vmware.vmware_vswitch:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        esxi_hostname: "{{ esxi_hostname }}"
+        switch: "{{ vswitch2_name }}"
+        nics:
+          - "{{ vmnic_100g_2 }}"
+        mtu: "{{ vswitch_mtu }}"
+        state: present
+      register: vswitch2_result
+
+    - name: Display vSwitch2 result
+      ansible.builtin.debug:
+        var: vswitch2_result
+
+    ####################################################################
+    # Task: Create VMkernel adapter 1 on vSwitch1 with NVMe/TCP service
+    ####################################################################
+    - name: Create VMkernel adapter 1 on vSwitch1
+      community.vmware.vmware_vmkernel:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        esxi_hostname: "{{ esxi_hostname }}"
+        vswitch_name: "{{ vswitch1_name }}"
+        portgroup_name: "{{ vmk1_portgroup }}"
+        mtu: "{{ vswitch_mtu }}"
+        network:
+          type: static
+          ip_address: "{{ vmk1_ip }}"
+          subnet_mask: "{{ vmk1_subnet }}"
+        enable_ft: false
+        enable_mgmt: false
+        enable_vmotion: false
+        enable_vsan: false
+        state: present
+      register: vmk1_result
+
+    - name: Display VMkernel adapter 1 result
+      ansible.builtin.debug:
+        var: vmk1_result
+
+    ####################################################################
+    # Task: Create VMkernel adapter 2 on vSwitch2 with NVMe/TCP service
+    ####################################################################
+    - name: Create VMkernel adapter 2 on vSwitch2
+      community.vmware.vmware_vmkernel:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        esxi_hostname: "{{ esxi_hostname }}"
+        vswitch_name: "{{ vswitch2_name }}"
+        portgroup_name: "{{ vmk2_portgroup }}"
+        mtu: "{{ vswitch_mtu }}"
+        network:
+          type: static
+          ip_address: "{{ vmk2_ip }}"
+          subnet_mask: "{{ vmk2_subnet }}"
+        enable_ft: false
+        enable_mgmt: false
+        enable_vmotion: false
+        enable_vsan: false
+        state: present
+      register: vmk2_result
+
+    - name: Display VMkernel adapter 2 result
+      ansible.builtin.debug:
+        var: vmk2_result
+
+    ####################################################################
+    # Task: Tag VMkernel adapters for NVMe/TCP traffic via esxcli
+    ####################################################################
+    - name: Tag VMkernel adapter 1 for NVMe/TCP traffic
+      community.vmware.vmware_host_command:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        commands:
+          - "esxcli network ip interface tag add -i vmk1 -t NVMeTCP"
+      register: vmk1_tag_result
+
+    - name: Display VMkernel adapter 1 tagging result
+      ansible.builtin.debug:
+        var: vmk1_tag_result
+
+    - name: Tag VMkernel adapter 2 for NVMe/TCP traffic
+      community.vmware.vmware_host_command:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        commands:
+          - "esxcli network ip interface tag add -i vmk2 -t NVMeTCP"
+      register: vmk2_tag_result
+
+    - name: Display VMkernel adapter 2 tagging result
+      ansible.builtin.debug:
+        var: vmk2_tag_result

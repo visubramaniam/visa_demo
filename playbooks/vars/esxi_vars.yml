@@ -1,0 +1,33 @@
+---
+####################################################################
+# ESXi host variables for NVMe/TCP networking setup
+####################################################################
+
+# 100Gbps physical NIC names (Mellanox dual-port)
+vmnic_100g_1: "vmnic4"
+vmnic_100g_2: "vmnic5"
+
+# vSwitch configuration - one vSwitch per NIC for NVMe/TCP port binding
+vswitch1_name: "vSwitch_NVMe_TCP_1"
+vswitch2_name: "vSwitch_NVMe_TCP_2"
+vswitch_mtu: 9000
+
+# VMkernel adapter configuration
+# Subnet 1: ESXi vmk1 <-> Storage CL3-A (192.168.10.x)
+vmk1_portgroup: "NVMe_TCP_PG1"
+vmk1_ip: "192.168.10.15"
+vmk1_subnet: "255.255.255.0"
+
+# Subnet 2: ESXi vmk2 <-> Storage CL4-A (192.168.11.x)
+vmk2_portgroup: "NVMe_TCP_PG2"
+vmk2_ip: "192.168.11.15"
+vmk2_subnet: "255.255.255.0"
+
+# Storage port IPs for NVMe/TCP target controllers
+storage_port1_ip: "192.168.10.10"
+storage_port2_ip: "192.168.11.10"
+nvme_tcp_port: 4420
+
+# Subsystem NQN - obtained after NVM subsystem creation on storage
+# Format: nqn.1994-04.jp.co.hitachi:nvme:storage-subsystem-sn.<serial>-nvmssid.<id>
+subsystem_nqn: "nqn.1994-04.jp.co.hitachi:nvme:storage-subsystem-sn.8-10004-nvmssid.00005"

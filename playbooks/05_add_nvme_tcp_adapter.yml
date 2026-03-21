@@ -1,0 +1,48 @@
+---
+####################################################################
+# Playbook 5: Add Software NVMe over TCP Adapter on ESXi Host
+# Adds the NVMe/TCP software adapter on the ESXi host
+####################################################################
+- name: Add Software NVMe over TCP Adapter on ESXi Host
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - ../ansible_vault_vars/ansible_vault_esxi_var.yml
+    - vars/esxi_vars.yml
+
+  tasks:
+    ####################################################################
+    # Task: Add Software NVMe over TCP Adapter
+    # Uses esxcli via community.vmware.vmware_host_command to add adapter
+    ####################################################################
+    - name: Add Software NVMe over TCP Adapter via esxcli
+      community.vmware.vmware_host_command:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        commands:
+          - "esxcli nvme fabrics enable --protocol TCP --device {{ vmnic_100g_1 }}"
+      register: nvme_adapter_result
+
+    - name: Display NVMe/TCP adapter result
+      ansible.builtin.debug:
+        var: nvme_adapter_result
+
+    ####################################################################
+    # Task: Verify NVMe/TCP adapter is added
+    ####################################################################
+    - name: Verify NVMe/TCP adapter status
+      community.vmware.vmware_host_command:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        commands:
+          - "esxcli nvme adapter list"
+      register: nvme_adapter_list
+
+    - name: Display NVMe adapter list
+      ansible.builtin.debug:
+        var: nvme_adapter_list

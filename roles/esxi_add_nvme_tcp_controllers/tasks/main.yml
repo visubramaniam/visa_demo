@@ -1,0 +1,74 @@
+---
+####################################################################
+# Role: esxi_add_nvme_tcp_controllers
+# Connects ESXi to VSP One Block 28 NVMe/TCP subsystem via
+# target controllers - one per storage port for multipath
+####################################################################
+
+- name: Add NVMe/TCP controller for storage port 1 (CL3-A)
+  community.vmware.vmware_host_command:
+    hostname: "{{ esxi_hostname }}"
+    username: "{{ vault_esxi_username }}"
+    password: "{{ vault_esxi_password }}"
+    validate_certs: false
+    commands:
+      - >-
+        esxcli nvme fabrics connect
+        --adapter vmhba64
+        --transport-address {{ storage_port1_ip }}
+        --transport-port {{ nvme_tcp_port }}
+        --host-traddr {{ vmk1_ip }}
+        --subnqn {{ subsystem_nqn }}
+  register: controller1_result
+
+- name: Display controller 1 result
+  ansible.builtin.debug:
+    var: controller1_result
+
+- name: Add NVMe/TCP controller for storage port 2 (CL4-A)
+  community.vmware.vmware_host_command:
+    hostname: "{{ esxi_hostname }}"
+    username: "{{ vault_esxi_username }}"
+    password: "{{ vault_esxi_password }}"
+    validate_certs: false
+    commands:
+      - >-
+        esxcli nvme fabrics connect
+        --adapter vmhba65
+        --transport-address {{ storage_port2_ip }}
+        --transport-port {{ nvme_tcp_port }}
+        --host-traddr {{ vmk2_ip }}
+        --subnqn {{ subsystem_nqn }}
+  register: controller2_result
+
+- name: Display controller 2 result
+  ansible.builtin.debug:
+    var: controller2_result
+
+- name: Verify NVMe/TCP controllers
+  community.vmware.vmware_host_command:
+    hostname: "{{ esxi_hostname }}"
+    username: "{{ vault_esxi_username }}"
+    password: "{{ vault_esxi_password }}"
+    validate_certs: false
+    commands:
+      - "esxcli nvme fabrics list"
+  register: nvme_fabrics_list
+
+- name: Display connected NVMe/TCP controllers
+  ansible.builtin.debug:
+    var: nvme_fabrics_list
+
+- name: Verify NVMe/TCP namespaces visible to ESXi
+  community.vmware.vmware_host_command:
+    hostname: "{{ esxi_hostname }}"
+    username: "{{ vault_esxi_username }}"
+    password: "{{ vault_esxi_password }}"
+    validate_certs: false
+    commands:
+      - "esxcfg-mpath -b"
+  register: nvme_namespaces
+
+- name: Display NVMe/TCP namespaces
+  ansible.builtin.debug:
+    var: nvme_namespaces
