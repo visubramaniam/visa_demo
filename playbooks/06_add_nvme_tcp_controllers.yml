@@ -77,7 +77,7 @@
     # Task: Verify NVMe/TCP controllers and namespaces
     ####################################################################
     - name: Verify NVMe/TCP controllers
-      ansible.builtin.raw: "esxcli nvme fabrics list"
+      ansible.builtin.raw: "esxcli nvme fabrics connect list"
       delegate_to: "{{ esxi_hostname }}"
       vars:
         ansible_user: "{{ vault_esxi_username }}"
