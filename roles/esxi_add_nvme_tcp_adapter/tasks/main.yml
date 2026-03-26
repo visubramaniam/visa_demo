@@ -5,13 +5,12 @@
 ####################################################################
 
 - name: Add Software NVMe over TCP Adapter via esxcli
-  community.vmware.vmware_host_command:
-    hostname: "{{ esxi_hostname }}"
-    username: "{{ vault_esxi_username }}"
-    password: "{{ vault_esxi_password }}"
-    validate_certs: false
-    commands:
-      - "esxcli nvme fabrics enable --protocol TCP --device {{ vmnic_100g_1 }}"
+  ansible.builtin.raw: "esxcli nvme fabrics enable --protocol TCP --device {{ vmnic_100g_1 }}"
+  delegate_to: "{{ esxi_hostname }}"
+  vars:
+    ansible_user: "{{ vault_esxi_username }}"
+    ansible_password: "{{ vault_esxi_password }}"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
   register: nvme_adapter_result_1
 
 - name: Display NVMe/TCP adapter result for vmnic_100g_1
@@ -19,13 +18,12 @@
     var: nvme_adapter_result_1
 
 - name: Add Software NVMe over TCP Adapter via esxcli for vmnic_100g_2
-  community.vmware.vmware_host_command:
-    hostname: "{{ esxi_hostname }}"
-    username: "{{ vault_esxi_username }}"
-    password: "{{ vault_esxi_password }}"
-    validate_certs: false
-    commands:
-      - "esxcli nvme fabrics enable --protocol TCP --device {{ vmnic_100g_2 }}"
+  ansible.builtin.raw: "esxcli nvme fabrics enable --protocol TCP --device {{ vmnic_100g_2 }}"
+  delegate_to: "{{ esxi_hostname }}"
+  vars:
+    ansible_user: "{{ vault_esxi_username }}"
+    ansible_password: "{{ vault_esxi_password }}"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
   register: nvme_adapter_result_2
 
 - name: Display NVMe/TCP adapter result for vmnic_100g_2
@@ -33,15 +31,14 @@
     var: nvme_adapter_result_2
 
 - name: Verify NVMe/TCP adapter status
-  community.vmware.vmware_host_command:
-    hostname: "{{ esxi_hostname }}"
-    username: "{{ vault_esxi_username }}"
-    password: "{{ vault_esxi_password }}"
-    validate_certs: false
-    commands:
-      - "esxcli nvme adapter list"
+  ansible.builtin.raw: "esxcli nvme adapter list"
+  delegate_to: "{{ esxi_hostname }}"
+  vars:
+    ansible_user: "{{ vault_esxi_username }}"
+    ansible_password: "{{ vault_esxi_password }}"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
   register: nvme_adapter_list
 
 - name: Display NVMe adapter list
   ansible.builtin.debug:
-    var: nvme_adapter_list
+    var: nvme_adapter_list.stdout_lines

@@ -71,19 +71,17 @@
     state: present
 
 - name: Tag VMkernel adapter 1 for NVMe/TCP traffic
-  community.vmware.vmware_host_command:
-    hostname: "{{ esxi_hostname }}"
-    username: "{{ vault_esxi_username }}"
-    password: "{{ vault_esxi_password }}"
-    validate_certs: false
-    commands:
-      - "esxcli network ip interface tag add -i vmk1 -t NVMeTCP"
+  ansible.builtin.raw: "esxcli network ip interface tag add -i vmk1 -t NVMeTCP"
+  delegate_to: "{{ esxi_hostname }}"
+  vars:
+    ansible_user: "{{ vault_esxi_username }}"
+    ansible_password: "{{ vault_esxi_password }}"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
 
 - name: Tag VMkernel adapter 2 for NVMe/TCP traffic
-  community.vmware.vmware_host_command:
-    hostname: "{{ esxi_hostname }}"
-    username: "{{ vault_esxi_username }}"
-    password: "{{ vault_esxi_password }}"
-    validate_certs: false
-    commands:
-      - "esxcli network ip interface tag add -i vmk2 -t NVMeTCP"
+  ansible.builtin.raw: "esxcli network ip interface tag add -i vmk2 -t NVMeTCP"
+  delegate_to: "{{ esxi_hostname }}"
+  vars:
+    ansible_user: "{{ vault_esxi_username }}"
+    ansible_password: "{{ vault_esxi_password }}"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'

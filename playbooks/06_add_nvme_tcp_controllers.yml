@@ -35,19 +35,18 @@
     # Task: Add NVMe/TCP controller for Storage Port 1 (CL3-A)
     ####################################################################
     - name: Add NVMe/TCP controller for storage port 1
-      community.vmware.vmware_host_command:
-        hostname: "{{ esxi_hostname }}"
-        username: "{{ vault_esxi_username }}"
-        password: "{{ vault_esxi_password }}"
-        validate_certs: false
-        commands:
-          - >-
-            esxcli nvme fabrics connect
-            --adapter vmhba64
-            --transport-address {{ storage_port1_ip }}
-            --transport-port {{ nvme_tcp_port }}
-            --host-traddr {{ vmk1_ip }}
-            --subnqn {{ subsystem_nqn }}
+      ansible.builtin.raw: >-
+        esxcli nvme fabrics connect
+        --adapter vmhba64
+        --transport-address {{ storage_port1_ip }}
+        --transport-port {{ nvme_tcp_port }}
+        --host-traddr {{ vmk1_ip }}
+        --subnqn {{ subsystem_nqn }}
+      delegate_to: "{{ esxi_hostname }}"
+      vars:
+        ansible_user: "{{ vault_esxi_username }}"
+        ansible_password: "{{ vault_esxi_password }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
       register: controller1_result
 
     - name: Display controller 1 result
@@ -58,19 +57,18 @@
     # Task: Add NVMe/TCP controller for Storage Port 2 (CL4-A)
     ####################################################################
     - name: Add NVMe/TCP controller for storage port 2
-      community.vmware.vmware_host_command:
-        hostname: "{{ esxi_hostname }}"
-        username: "{{ vault_esxi_username }}"
-        password: "{{ vault_esxi_password }}"
-        validate_certs: false
-        commands:
-          - >-
-            esxcli nvme fabrics connect
-            --adapter vmhba65
-            --transport-address {{ storage_port2_ip }}
-            --transport-port {{ nvme_tcp_port }}
-            --host-traddr {{ vmk2_ip }}
-            --subnqn {{ subsystem_nqn }}
+      ansible.builtin.raw: >-
+        esxcli nvme fabrics connect
+        --adapter vmhba65
+        --transport-address {{ storage_port2_ip }}
+        --transport-port {{ nvme_tcp_port }}
+        --host-traddr {{ vmk2_ip }}
+        --subnqn {{ subsystem_nqn }}
+      delegate_to: "{{ esxi_hostname }}"
+      vars:
+        ansible_user: "{{ vault_esxi_username }}"
+        ansible_password: "{{ vault_esxi_password }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
       register: controller2_result
 
     - name: Display controller 2 result
@@ -81,29 +79,27 @@
     # Task: Verify NVMe/TCP controllers and namespaces
     ####################################################################
     - name: Verify NVMe/TCP controllers
-      community.vmware.vmware_host_command:
-        hostname: "{{ esxi_hostname }}"
-        username: "{{ vault_esxi_username }}"
-        password: "{{ vault_esxi_password }}"
-        validate_certs: false
-        commands:
-          - "esxcli nvme fabrics list"
+      ansible.builtin.raw: "esxcli nvme fabrics list"
+      delegate_to: "{{ esxi_hostname }}"
+      vars:
+        ansible_user: "{{ vault_esxi_username }}"
+        ansible_password: "{{ vault_esxi_password }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
       register: nvme_fabrics_list
 
     - name: Display connected NVMe/TCP controllers
       ansible.builtin.debug:
-        var: nvme_fabrics_list
+        var: nvme_fabrics_list.stdout_lines
 
     - name: Verify NVMe/TCP namespaces visible to ESXi
-      community.vmware.vmware_host_command:
-        hostname: "{{ esxi_hostname }}"
-        username: "{{ vault_esxi_username }}"
-        password: "{{ vault_esxi_password }}"
-        validate_certs: false
-        commands:
-          - "esxcfg-mpath -b"
+      ansible.builtin.raw: "esxcfg-mpath -b"
+      delegate_to: "{{ esxi_hostname }}"
+      vars:
+        ansible_user: "{{ vault_esxi_username }}"
+        ansible_password: "{{ vault_esxi_password }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
       register: nvme_namespaces
 
     - name: Display NVMe/TCP namespaces
       ansible.builtin.debug:
-        var: nvme_namespaces
+        var: nvme_namespaces.stdout_lines
