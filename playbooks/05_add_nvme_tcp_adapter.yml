@@ -24,14 +24,31 @@
         validate_certs: false
         commands:
           - "esxcli nvme fabrics enable --protocol TCP --device {{ vmnic_100g_1 }}"
-      register: nvme_adapter_result
+      register: nvme_adapter_result_1
 
-    - name: Display NVMe/TCP adapter result
+    - name: Display NVMe/TCP adapter result for vmnic_100g_1
       ansible.builtin.debug:
-        var: nvme_adapter_result
+        var: nvme_adapter_result_1
 
     ####################################################################
-    # Task: Verify NVMe/TCP adapter is added
+    # Task: Add Software NVMe over TCP Adapter for vmnic_100g_2
+    ####################################################################
+    - name: Add Software NVMe over TCP Adapter via esxcli for vmnic_100g_2
+      community.vmware.vmware_host_command:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        commands:
+          - "esxcli nvme fabrics enable --protocol TCP --device {{ vmnic_100g_2 }}"
+      register: nvme_adapter_result_2
+
+    - name: Display NVMe/TCP adapter result for vmnic_100g_2
+      ansible.builtin.debug:
+        var: nvme_adapter_result_2
+
+    ####################################################################
+    # Task: Verify NVMe/TCP adapters are added
     ####################################################################
     - name: Verify NVMe/TCP adapter status
       community.vmware.vmware_host_command:

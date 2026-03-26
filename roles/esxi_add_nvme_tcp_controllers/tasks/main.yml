@@ -5,6 +5,20 @@
 # target controllers - one per storage port for multipath
 ####################################################################
 
+- name: Check if auto-generated NQN file exists
+  ansible.builtin.stat:
+    path: "{{ role_path | dirname | dirname }}/playbooks/vars/generated_nvm_nqn.yml"
+  register: generated_nqn_file
+
+- name: Load auto-discovered subsystem NQN
+  ansible.builtin.include_vars:
+    file: "{{ role_path | dirname | dirname }}/playbooks/vars/generated_nvm_nqn.yml"
+  when: generated_nqn_file.stat.exists
+
+- name: Display subsystem NQN being used
+  ansible.builtin.debug:
+    msg: "Using subsystem NQN: {{ subsystem_nqn }}"
+
 - name: Add NVMe/TCP controller for storage port 1 (CL3-A)
   community.vmware.vmware_host_command:
     hostname: "{{ esxi_hostname }}"

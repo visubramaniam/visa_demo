@@ -40,7 +40,8 @@
           ldev_id: "{{ (ldev_start_id | int) + (item | int) }}"
           pool_id: "{{ pool_id | int }}"
           size: "{{ ldev_size }}"
-          capacity_saving: "disabled"
+          capacity_saving: "compression_deduplication"
+          data_reduction_share: true
           name: "{{ ldev_name_prefix }}_{{ '%04d' | format((ldev_start_id | int) + (item | int)) }}"
       loop: "{{ range(0, ldev_count | int) | list }}"
       when: >
