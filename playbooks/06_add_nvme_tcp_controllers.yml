@@ -38,10 +38,9 @@
       ansible.builtin.raw: >-
         esxcli nvme fabrics connect
         --adapter vmhba64
-        --transport-address {{ storage_port1_ip }}
-        --transport-port {{ nvme_tcp_port }}
-        --host-traddr {{ vmk1_ip }}
-        --subnqn {{ subsystem_nqn }}
+        --ip-address {{ storage_port1_ip }}
+        --port-number {{ nvme_tcp_port }}
+        --subsystem-nqn {{ subsystem_nqn }}
       delegate_to: "{{ esxi_hostname }}"
       vars:
         ansible_user: "{{ vault_esxi_username }}"
@@ -60,10 +59,9 @@
       ansible.builtin.raw: >-
         esxcli nvme fabrics connect
         --adapter vmhba65
-        --transport-address {{ storage_port2_ip }}
-        --transport-port {{ nvme_tcp_port }}
-        --host-traddr {{ vmk2_ip }}
-        --subnqn {{ subsystem_nqn }}
+        --ip-address {{ storage_port2_ip }}
+        --port-number {{ nvme_tcp_port }}
+        --subsystem-nqn {{ subsystem_nqn }}
       delegate_to: "{{ esxi_hostname }}"
       vars:
         ansible_user: "{{ vault_esxi_username }}"
