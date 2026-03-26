@@ -56,6 +56,45 @@
         var: vswitch2_result
 
     ####################################################################
+    # Task: Create portgroups on vSwitches for VMkernel adapters
+    ####################################################################
+    - name: Create portgroup on vSwitch1 for NVMe/TCP
+      community.vmware.vmware_portgroup:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        hosts:
+          - "{{ esxi_hostname }}"
+        switch: "{{ vswitch1_name }}"
+        portgroup: "{{ vmk1_portgroup }}"
+        vlan_id: 0
+        state: present
+      register: pg1_result
+
+    - name: Display portgroup 1 result
+      ansible.builtin.debug:
+        var: pg1_result
+
+    - name: Create portgroup on vSwitch2 for NVMe/TCP
+      community.vmware.vmware_portgroup:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        hosts:
+          - "{{ esxi_hostname }}"
+        switch: "{{ vswitch2_name }}"
+        portgroup: "{{ vmk2_portgroup }}"
+        vlan_id: 0
+        state: present
+      register: pg2_result
+
+    - name: Display portgroup 2 result
+      ansible.builtin.debug:
+        var: pg2_result
+
+    ####################################################################
     # Task: Create VMkernel adapter 1 on vSwitch1 with NVMe/TCP service
     ####################################################################
     - name: Create VMkernel adapter 1 on vSwitch1
