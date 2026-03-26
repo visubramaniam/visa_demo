@@ -14,24 +14,6 @@
 
   tasks:
     ####################################################################
-    # Task: Load auto-discovered subsystem NQN from step 2
-    # Falls back to subsystem_nqn in esxi_vars.yml if not found
-    ####################################################################
-    - name: Check if auto-generated NQN file exists
-      ansible.builtin.stat:
-        path: "{{ playbook_dir }}/vars/generated_nvm_nqn.yml"
-      register: generated_nqn_file
-
-    - name: Load auto-discovered subsystem NQN
-      ansible.builtin.include_vars:
-        file: "{{ playbook_dir }}/vars/generated_nvm_nqn.yml"
-      when: generated_nqn_file.stat.exists
-
-    - name: Display subsystem NQN being used
-      ansible.builtin.debug:
-        msg: "Using subsystem NQN: {{ subsystem_nqn }}"
-
-    ####################################################################
     # Task: Add NVMe/TCP controller for Storage Port 1 (CL3-A)
     ####################################################################
     - name: Add NVMe/TCP controller for storage port 1
