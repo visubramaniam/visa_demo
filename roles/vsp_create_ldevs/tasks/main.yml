@@ -9,11 +9,12 @@
     connection_info: "{{ connection_info }}"
     state: present
     spec:
-      ldev_id: "{{ ldev_start_id + item }}"
-      pool_id: "{{ pool_id }}"
+      ldev_id: "{{ (ldev_start_id | int) + (item | int) }}"
+      pool_id: "{{ pool_id | int }}"
       size: "{{ ldev_size }}"
-      name: "{{ ldev_name_prefix }}_{{ '%04d' | format(ldev_start_id + item) }}"
-  loop: "{{ range(0, ldev_count) | list }}"
+      capacity_saving: disabled
+      name: "{{ ldev_name_prefix }}_{{ '%04d' | format((ldev_start_id | int) + (item | int)) }}"
+  loop: "{{ range(0, ldev_count | int) | list }}"
   register: ldev_results
 
 - name: Display created LDEV details

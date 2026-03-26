@@ -1,0 +1,29 @@
+---
+####################################################################
+# Test: Verify storage REST API connectivity
+####################################################################
+- name: Test Storage Connection
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - ../ansible_vault_vars/ansible_vault_storage_var.yml
+    - vars/storage_vars.yml
+
+  vars:
+    connection_info:
+      address: "{{ storage_address }}"
+      username: "{{ vault_storage_username }}"
+      password: "{{ vault_storage_secret }}"
+
+  tasks:
+    - name: Get LDEV facts for a single LDEV
+      hitachivantara.vspone_block.vsp.hv_ldev_facts:
+        connection_info: "{{ connection_info }}"
+        spec:
+          ldev_id: "{{ ldev_start_id | int }}"
+      register: ldev_facts
+
+    - name: Display LDEV facts
+      ansible.builtin.debug:
+        var: ldev_facts
