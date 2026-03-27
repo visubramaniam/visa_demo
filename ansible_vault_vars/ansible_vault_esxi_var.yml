@@ -9,4 +9,4 @@ vault_esxi_password: "Passw0rd!"
 # vCenter credentials (if using vCenter for ESXi management)
 vcenter_hostname: "dc1-vcenter.storage.idc.coe.hv"
 vault_vcenter_username: "administrator@vsphere.local"
-vault_vcenter_password: "Demo@G@D123"
+vault_vcenter_password: "**********"
