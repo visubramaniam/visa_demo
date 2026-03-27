@@ -32,6 +32,10 @@
     ansible_password: "{{ vault_esxi_password }}"
     ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
   register: controller1_result
+  failed_when:
+    - controller1_result.rc != 0
+    - "'already connected' not in (controller1_result.stdout | default(''))"
+  changed_when: controller1_result.rc == 0
 
 - name: Display controller 1 result
   ansible.builtin.debug:
@@ -50,6 +54,10 @@
     ansible_password: "{{ vault_esxi_password }}"
     ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
   register: controller2_result
+  failed_when:
+    - controller2_result.rc != 0
+    - "'already connected' not in (controller2_result.stdout | default(''))"
+  changed_when: controller2_result.rc == 0
 
 - name: Display controller 2 result
   ansible.builtin.debug:
