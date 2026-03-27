@@ -64,7 +64,7 @@
     var: controller2_result
 
 - name: Verify NVMe/TCP controllers
-  ansible.builtin.raw: "esxcli nvme fabrics connect list"
+  ansible.builtin.raw: "esxcli nvme controller list"
   delegate_to: "{{ esxi_hostname }}"
   vars:
     ansible_user: "{{ vault_esxi_username }}"
@@ -77,7 +77,7 @@
     var: nvme_fabrics_list.stdout_lines
 
 - name: Verify NVMe/TCP namespaces visible to ESXi
-  ansible.builtin.raw: "esxcfg-mpath -b"
+  ansible.builtin.raw: "esxcli nvme namespace list"
   delegate_to: "{{ esxi_hostname }}"
   vars:
     ansible_user: "{{ vault_esxi_username }}"
