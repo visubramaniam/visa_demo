@@ -161,6 +161,10 @@
         ansible_password: "{{ vault_esxi_password }}"
         ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
       register: vmk1_tag_result
+      failed_when:
+        - vmk1_tag_result.rc != 0
+        - "'already tagged' not in vmk1_tag_result.stdout | default('')"
+      changed_when: vmk1_tag_result.rc == 0
 
     - name: Display VMkernel adapter 1 tagging result
       ansible.builtin.debug:
@@ -174,6 +178,10 @@
         ansible_password: "{{ vault_esxi_password }}"
         ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
       register: vmk2_tag_result
+      failed_when:
+        - vmk2_tag_result.rc != 0
+        - "'already tagged' not in vmk2_tag_result.stdout | default('')"
+      changed_when: vmk2_tag_result.rc == 0
 
     - name: Display VMkernel adapter 2 tagging result
       ansible.builtin.debug:

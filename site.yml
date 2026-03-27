@@ -1,25 +1,24 @@
 ---
 ####################################################################
 # Master Playbook: End-to-End NVMe/TCP Setup
-# Executes all roles in sequence:
-#   1. Create LDEVs on VSP One Block 28
-#   2. Create NVM Subsystem with ports and host NQN
-#   3. Add namespaces and namespace paths
-#   4. Configure ESXi networking (vSwitches + VMkernel adapters)
-#   5. Add software NVMe over TCP adapter
-#   6. Add NVMe/TCP target controllers
+# Executes all 6 steps in a single combined role:
+#   Step 1 - Create LDEVs on VSP One Block 28
+#   Step 2 - Create NVM Subsystem with ports and host NQN
+#   Step 3 - Add namespaces and namespace paths
+#   Step 4 - Configure ESXi networking (vSwitches + VMkernel adapters)
+#   Step 5 - Add software NVMe over TCP adapter
+#   Step 6 - Add NVMe/TCP target controllers
 ####################################################################
 
-####################################################################
-# Phase 1: Storage-side configuration (VSP One Block 28)
-####################################################################
-- name: "Phase 1: VSP One Block 28 Storage Configuration"
+- name: "NVMe/TCP End-to-End Setup: VSP One Block 28 + ESXi"
   hosts: localhost
   gather_facts: false
 
   vars_files:
     - ansible_vault_vars/ansible_vault_storage_var.yml
+    - ansible_vault_vars/ansible_vault_esxi_var.yml
     - playbooks/vars/storage_vars.yml
+    - playbooks/vars/esxi_vars.yml
 
   vars:
     connection_info:
@@ -28,22 +27,4 @@
       password: "{{ vault_storage_secret }}"
 
   roles:
-    - role: roles/vsp_create_ldevs
-    - role: roles/vsp_create_nvm_subsystem
-    - role: roles/vsp_add_namespaces_and_paths
-
-####################################################################
-# Phase 2: ESXi host-side configuration
-####################################################################
-- name: "Phase 2: ESXi Host NVMe/TCP Configuration"
-  hosts: localhost
-  gather_facts: false
-
-  vars_files:
-    - ansible_vault_vars/ansible_vault_esxi_var.yml
-    - playbooks/vars/esxi_vars.yml
-
-  roles:
-    - role: roles/esxi_configure_networking
-    - role: roles/esxi_add_nvme_tcp_adapter
-    - role: roles/esxi_add_nvme_tcp_controllers
+    - role: roles/nvme_tcp_end_to_end

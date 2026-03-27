@@ -1,0 +1,6 @@
+2026-03-27T13:54:06.392668+00:00 WARNING 'ansible_navigator.image_manager.puller._log_message' Image inspection failed, image assumed to be corrupted or missing
+2026-03-27T13:54:06.393542+00:00 WARNING 'ansible_navigator.image_manager.puller._log_message' stdout: 
+2026-03-27T13:54:06.393588+00:00 WARNING 'ansible_navigator.image_manager.puller._log_message' stderr: Cannot connect to Podman. Please verify your connection to the Linux system using `podman system connection list`, or try `podman machine init` and `podman machine start` to manage a new Linux VM
+Error: unable to connect to Podman socket: failed to read identity "/Users/vinodsubramaniam/.local/share/containers/podman/machine/machine": open /Users/vinodsubramaniam/.local/share/containers/podman/machine/machine: no such file or directory
+
+2026-03-27T13:54:06.414008+00:00 ERROR 'ansible_navigator.image_manager.puller._log_message' Execution environment pull failed
