@@ -169,17 +169,17 @@ ansible-playbook playbooks/test_storage_connection.yml --ask-vault-pass
 ```
 ESXi Host (192.168.55.197)               VSP One Block 28 (serial: 840498)
 ┌──────────────────────────┐              ┌──────────────────────────────┐
-│  vmnic2 (100G)           │              │  CL1-D (192.168.52.31)      │
-│   └─ vSwitch_NVMe_TCP_1  │──── NVMe ───│                              │
-│      └─ NVMe_TCP_PG1     │    /TCP     │                              │
+│  vmnic2 (100G)           │              │  CL1-D (192.168.52.31)       │
+│   └─ vSwitch_NVMe_TCP_1  │──── NVMe ─── │                              │
+│      └─ NVMe_TCP_PG1     │    /TCP      │                              │
 │         └─ vmk1          │              │  NVM Subsystem               │
-│            192.168.52.36  │              │   (NVMeTCP_VSPOneB28)        │
-│                          │              │   └─ 10 Namespaces (LDEVs)  │
+│            192.168.52.36 │              │   (NVMeTCP_VSPOneB28)        │
+│                          │              │   └─ 10 Namespaces (LDEVs)   │
 │  vmnic3 (100G)           │              │                              │
-│   └─ vSwitch_NVMe_TCP_2  │──── NVMe ───│  CL2-D (192.168.52.32)      │
-│      └─ NVMe_TCP_PG2     │    /TCP     │                              │
+│   └─ vSwitch_NVMe_TCP_2  │──── NVMe ─── │  CL2-D (192.168.52.32)       │
+│      └─ NVMe_TCP_PG2     │    /TCP      │                              │
 │         └─ vmk2          │              │                              │
-│            192.168.52.37  │              │                              │
+│            192.168.52.37 │              │                              │
 └──────────────────────────┘              └──────────────────────────────┘
          MTU 9000                                  Port 4420
     Subnet: 255.255.252.0
