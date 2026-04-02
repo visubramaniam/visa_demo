@@ -13,6 +13,7 @@ rhel_ldev_size: "10GB"
 rhel_ldev_name_prefix: "rhel_nvme_tcp_ldev"
 
 # NVM Subsystem configuration
+rhel_subsystem_id: 1
 rhel_nvm_subsystem_name: "NVMeTCP_RHEL_VSPOneB28"
 rhel_nvm_subsystem_host_mode: "LINUX/IRIX"
 

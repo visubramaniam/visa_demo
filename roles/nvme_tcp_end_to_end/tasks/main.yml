@@ -42,6 +42,7 @@
   hitachivantara.vspone_block.vsp.hv_nvm_subsystems:
     connection_info: "{{ connection_info }}"
     spec:
+      id: "{{ subsystem_id }}"
       name: "{{ nvm_subsystem_name }}"
       ports: "{{ storage_ports }}"
       host_mode: "{{ nvm_subsystem_host_mode }}"

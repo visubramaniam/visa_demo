@@ -13,6 +13,7 @@ ldev_size: "10GB"
 ldev_name_prefix: "nvme_tcp_ldev"
 
 # NVM Subsystem configuration
+subsystem_id: 0
 nvm_subsystem_name: "NVMeTCP_VSPOneB28"
 nvm_subsystem_host_mode: "VMWARE_EX"
 
