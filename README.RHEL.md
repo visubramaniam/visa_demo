@@ -78,7 +78,7 @@ Edit `playbooks/vars/storage_rhel_vars.yml`:
 | `rhel_ldev_name_prefix` | LDEV naming prefix | `rhel_nvme_tcp_ldev` |
 | `rhel_nvm_subsystem_name` | NVM Subsystem name | `NVMeTCP_RHEL_VSPOneB28` |
 | `rhel_nvm_subsystem_host_mode` | Host mode for Linux | `LINUX/IRIX` |
-| `rhel_storage_ports` | NVMe/TCP storage ports | `["CL1-D", "CL2-D"]` |
+| `rhel_storage_ports` | NVMe/TCP storage ports | `["CL3-D", "CL4-D"]` |
 | `rhel_storage_port1_ip` / `rhel_storage_port2_ip` | Storage port target IPs | `192.168.10.30` / `192.168.20.30` |
 | `rhel_nvme_tcp_port` | NVMe/TCP port | `4420` |
 | `rhel_nvme_discovery_port` | NVMe discovery port | `8009` |
@@ -118,14 +118,14 @@ ansible-playbook site_rhel.yml --ask-vault-pass
 ```
 RHEL Host (192.168.53.160)                VSP One Block 28
 ┌──────────────────────────┐              ┌──────────────────────────────┐
-│  ens97f1 (100G)          │              │  CL1-D (192.168.10.30)       │
+│  ens97f1 (100G)          │              │  CL3-D (192.168.10.30)       │
 │    192.168.10.45         │──── NVMe ────│                              │
 │                          │    /TCP      │                              │
 │                          │              │  NVM Subsystem               │
 │                          │              │   (NVMeTCP_RHEL_VSPOneB28)   │
 │                          │              │   └─ 10 Namespaces (LDEVs)   │
 │  ens99f1 (100G)          │              │                              │
-│    192.168.20.45         │──── NVMe ────│  CL2-D (192.168.20.30)       │
+│    192.168.20.45         │──── NVMe ────│  CL4-D (192.168.20.30)       │
 │                          │    /TCP      │                              │
 └──────────────────────────┘              └──────────────────────────────┘
     Subnet prefix: /24                         Ports: 4420 / 8009
@@ -142,7 +142,7 @@ Uses `hitachivantara.vspone_block.vsp.hv_ldev` to create LDEVs in a loop. Checks
 ### Step 2 — Create NVM Subsystem + Auto-Generate NQN
 
 Uses `hitachivantara.vspone_block.vsp.hv_nvm_subsystems` to create a subsystem with:
-- Two NVMe/TCP storage ports (`CL1-D`, `CL2-D`)
+- Two NVMe/TCP storage ports (`CL3-D`, `CL4-D`)
 - Host mode set to `LINUX/IRIX`
 - Namespace security enabled
 - RHEL host NQN registered with nickname

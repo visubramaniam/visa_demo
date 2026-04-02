@@ -18,8 +18,8 @@ rhel_nvm_subsystem_host_mode: "LINUX/IRIX"
 
 # 100G NVMe/TCP storage ports
 rhel_storage_ports:
-  - "CL1-D"
-  - "CL2-D"
+  - "CL3-D"
+  - "CL4-D"
 
 # Storage port IPs for NVMe/TCP targets
 rhel_storage_port1_ip: "192.168.10.30"
