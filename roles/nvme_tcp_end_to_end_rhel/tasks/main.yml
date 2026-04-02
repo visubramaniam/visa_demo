@@ -89,10 +89,13 @@
     msg: "RHEL Host NQN: {{ rhel_host_nqn }}"
 
 - name: "Step 2 - Configure static IP on NIC interface 1 ({{ rhel_nic1 }})"
-  ansible.builtin.shell: |
-    nmcli con mod {{ rhel_nic1 }} ipv4.addresses {{ rhel_nic1_ip }}/{{ rhel_nic_prefix }} \
-      ipv4.method manual
-    nmcli con up {{ rhel_nic1 }}
+  ansible.builtin.shell:
+    cmd: |
+      if ! nmcli con show {{ rhel_nic1 }} > /dev/null 2>&1; then
+        nmcli con add type ethernet con-name {{ rhel_nic1 }} ifname {{ rhel_nic1 }}
+      fi
+      nmcli con mod {{ rhel_nic1 }} ipv4.addresses {{ rhel_nic1_ip }}/{{ rhel_nic_prefix }} ipv4.method manual
+      nmcli con up {{ rhel_nic1 }}
   delegate_to: "{{ rhel_hostname }}"
   vars:
     ansible_user: "{{ vault_rhel_username }}"
@@ -102,10 +105,13 @@
   changed_when: "'successfully activated' in nic1_config.stdout | default('')"
 
 - name: "Step 2 - Configure static IP on NIC interface 2 ({{ rhel_nic2 }})"
-  ansible.builtin.shell: |
-    nmcli con mod {{ rhel_nic2 }} ipv4.addresses {{ rhel_nic2_ip }}/{{ rhel_nic_prefix }} \
-      ipv4.method manual
-    nmcli con up {{ rhel_nic2 }}
+  ansible.builtin.shell:
+    cmd: |
+      if ! nmcli con show {{ rhel_nic2 }} > /dev/null 2>&1; then
+        nmcli con add type ethernet con-name {{ rhel_nic2 }} ifname {{ rhel_nic2 }}
+      fi
+      nmcli con mod {{ rhel_nic2 }} ipv4.addresses {{ rhel_nic2_ip }}/{{ rhel_nic_prefix }} ipv4.method manual
+      nmcli con up {{ rhel_nic2 }}
   delegate_to: "{{ rhel_hostname }}"
   vars:
     ansible_user: "{{ vault_rhel_username }}"
