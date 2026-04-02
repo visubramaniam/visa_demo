@@ -1,0 +1,33 @@
+---
+####################################################################
+# Master Playbook: End-to-End NVMe/TCP Setup for RHEL Host
+# Executes all 6 steps in a single combined role:
+#   Step 1 - Create LDEVs on VSP One Block 28
+#   Step 2 - Create NVM Subsystem with ports and host NQN
+#   Step 3 - Add namespaces and namespace paths
+#   Step 4 - Configure RHEL networking and install NVMe packages
+#   Step 5 - NVMe/TCP target discovery and connect
+#   Step 6 - Configure NVMe native multipathing
+#
+# Reference: "Configuring NVMe/TCP and Multipathing for RHEL and
+#   SLES Linux OS with VSP One Block 20 Storage NVM Subsystems v1.0"
+####################################################################
+
+- name: "NVMe/TCP End-to-End Setup: VSP One Block 28 + RHEL"
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - ansible_vault_vars/ansible_vault_storage_var.yml
+    - ansible_vault_vars/ansible_vault_rhel_var.yml
+    - playbooks/vars/storage_vars.yml
+    - playbooks/vars/rhel_vars.yml
+
+  vars:
+    connection_info:
+      address: "{{ storage_address }}"
+      username: "{{ vault_storage_username }}"
+      password: "{{ vault_storage_secret }}"
+
+  roles:
+    - role: roles/nvme_tcp_end_to_end_rhel

@@ -1,0 +1,7 @@
+---
+# RHEL host credentials - encrypt this file with Ansible Vault
+# ansible-vault encrypt ansible_vault_vars/ansible_vault_rhel_var.yml
+
+rhel_hostname: "192.168.10.45"
+vault_rhel_username: "root"
+vault_rhel_password: "changeme"
