@@ -9,6 +9,10 @@ Ansible automation for configuring NVMe over TCP connectivity between a Hitachi 
 | **VMware ESXi** | [README.ESX.md](README.ESX.md) | `site.yml` | `nvme_tcp_end_to_end` |
 | **Red Hat Enterprise Linux** | [README.RHEL.md](README.RHEL.md) | `site_rhel.yml` | `nvme_tcp_end_to_end_rhel` |
 
+## Best Practices
+
+See [BEST_PRACTICES.md](BEST_PRACTICES.md) for NVMe/TCP design guidelines covering subsystem-to-host ratios, port-to-namespace sizing, multipathing, network configuration, performance tuning, and troubleshooting.
+
 ## Common Prerequisites
 
 - Ansible 2.14+
