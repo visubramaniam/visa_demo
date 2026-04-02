@@ -7,7 +7,7 @@
 rhel_pool_id: 0
 
 # LDEV configuration - 10 LDEVs of 10GB each
-rhel_ldev_start_id: 5888
+rhel_ldev_start_id: 6144
 rhel_ldev_count: 10
 rhel_ldev_size: "10GB"
 rhel_ldev_name_prefix: "rhel_nvme_tcp_ldev"
