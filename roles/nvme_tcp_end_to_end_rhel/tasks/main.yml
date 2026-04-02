@@ -2,14 +2,16 @@
 ####################################################################
 # Role: nvme_tcp_end_to_end_rhel
 # Combined role for full NVMe/TCP setup for RHEL host:
-#   Phase 1: VSP One Block 28 storage configuration
-#     Step 1 - Create LDEVs
-#     Step 2 - Create NVM Subsystem + auto-generate NQN
-#     Step 3 - Add namespaces and paths
-#   Phase 2: RHEL host configuration
-#     Step 4 - Configure RHEL networking and install NVMe packages
-#     Step 5 - NVMe/TCP target discovery and connect
-#     Step 6 - Configure NVMe native multipathing
+#   Step 1 - Create LDEVs on VSP One Block 28
+#   Step 2 - Configure RHEL networking, read host NQN
+#   Step 3 - Create NVM Subsystem (uses host NQN from Step 2)
+#   Step 4 - Add namespaces and paths
+#   Step 5 - NVMe/TCP target discovery and connect
+#   Step 6 - Configure NVMe native multipathing
+#
+# Note: Step 2 runs before Steps 3/4 so the unique host NQN (with
+#   its UUID) is read from the RHEL host before registering it on
+#   the storage array.
 #
 # Reference: "Configuring NVMe/TCP and Multipathing for RHEL and
 #   SLES Linux OS with VSP One Block 20 Storage NVM Subsystems v1.0"
@@ -39,9 +41,124 @@
   when: ldev_results.results[item] is defined
 
 ####################################################################
-# Step 2: Create NVM Subsystem with ports and host NQN
+# Step 2: Configure RHEL Networking and Install NVMe Packages
+# (Runs before Step 3 to read the host NQN for storage registration)
 ####################################################################
-- name: "Step 2 - Create NVM Subsystem with ports and host NQN"
+- name: "Step 2 - Verify nvme-cli is installed"
+  ansible.builtin.shell: rpm -qa | grep nvme-cli
+  delegate_to: "{{ rhel_hostname }}"
+  vars:
+    ansible_user: "{{ vault_rhel_username }}"
+    ansible_password: "{{ vault_rhel_password }}"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  register: nvme_cli_check
+  changed_when: false
+  failed_when: false
+
+- name: "Step 2 - Install nvme-cli if not present"
+  ansible.builtin.yum:
+    name: nvme-cli
+    state: present
+  delegate_to: "{{ rhel_hostname }}"
+  vars:
+    ansible_user: "{{ vault_rhel_username }}"
+    ansible_password: "{{ vault_rhel_password }}"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  when: nvme_cli_check.rc != 0
+
+- name: "Step 2 - Display installed nvme-cli package"
+  ansible.builtin.debug:
+    msg: "nvme-cli: {{ nvme_cli_check.stdout_lines | default(['not installed']) }}"
+
+- name: "Step 2 - Read host NQN from RHEL host"
+  ansible.builtin.command: cat /etc/nvme/hostnqn
+  delegate_to: "{{ rhel_hostname }}"
+  vars:
+    ansible_user: "{{ vault_rhel_username }}"
+    ansible_password: "{{ vault_rhel_password }}"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  register: rhel_host_nqn_result
+  changed_when: false
+
+- name: "Step 2 - Set host NQN fact for use in Steps 3 and 4"
+  ansible.builtin.set_fact:
+    rhel_host_nqn: "{{ rhel_host_nqn_result.stdout | trim }}"
+
+- name: "Step 2 - Display RHEL host NQN"
+  ansible.builtin.debug:
+    msg: "RHEL Host NQN: {{ rhel_host_nqn }}"
+
+- name: "Step 2 - Configure static IP on NIC interface 1 ({{ rhel_nic1 }})"
+  ansible.builtin.shell: |
+    nmcli con mod {{ rhel_nic1 }} ipv4.addresses {{ rhel_nic1_ip }}/{{ rhel_nic_prefix }} \
+      ipv4.method manual
+    nmcli con up {{ rhel_nic1 }}
+  delegate_to: "{{ rhel_hostname }}"
+  vars:
+    ansible_user: "{{ vault_rhel_username }}"
+    ansible_password: "{{ vault_rhel_password }}"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  register: nic1_config
+  changed_when: "'successfully activated' in nic1_config.stdout | default('')"
+
+- name: "Step 2 - Configure static IP on NIC interface 2 ({{ rhel_nic2 }})"
+  ansible.builtin.shell: |
+    nmcli con mod {{ rhel_nic2 }} ipv4.addresses {{ rhel_nic2_ip }}/{{ rhel_nic_prefix }} \
+      ipv4.method manual
+    nmcli con up {{ rhel_nic2 }}
+  delegate_to: "{{ rhel_hostname }}"
+  vars:
+    ansible_user: "{{ vault_rhel_username }}"
+    ansible_password: "{{ vault_rhel_password }}"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  register: nic2_config
+  changed_when: "'successfully activated' in nic2_config.stdout | default('')"
+
+- name: "Step 2 - Verify NIC interface IP addresses"
+  ansible.builtin.command: ip addr show
+  delegate_to: "{{ rhel_hostname }}"
+  vars:
+    ansible_user: "{{ vault_rhel_username }}"
+    ansible_password: "{{ vault_rhel_password }}"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  register: ip_addr_output
+  changed_when: false
+
+- name: "Step 2 - Display NIC IP addresses"
+  ansible.builtin.debug:
+    var: ip_addr_output.stdout_lines
+
+- name: "Step 2 - Verify connectivity to storage port 1"
+  ansible.builtin.command: "ping -c 4 {{ rhel_storage_port1_ip }}"
+  delegate_to: "{{ rhel_hostname }}"
+  vars:
+    ansible_user: "{{ vault_rhel_username }}"
+    ansible_password: "{{ vault_rhel_password }}"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  register: ping_port1
+  changed_when: false
+
+- name: "Step 2 - Verify connectivity to storage port 2"
+  ansible.builtin.command: "ping -c 4 {{ rhel_storage_port2_ip }}"
+  delegate_to: "{{ rhel_hostname }}"
+  vars:
+    ansible_user: "{{ vault_rhel_username }}"
+    ansible_password: "{{ vault_rhel_password }}"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  register: ping_port2
+  changed_when: false
+
+- name: "Step 2 - Display connectivity results"
+  ansible.builtin.debug:
+    msg:
+      - "Ping to {{ rhel_storage_port1_ip }}: {{ 'SUCCESS' if ping_port1.rc == 0 else 'FAILED' }}"
+      - "Ping to {{ rhel_storage_port2_ip }}: {{ 'SUCCESS' if ping_port2.rc == 0 else 'FAILED' }}"
+
+####################################################################
+# Step 3: Create NVM Subsystem with ports and host NQN
+# (Uses rhel_host_nqn read from RHEL host in Step 2)
+####################################################################
+- name: "Step 3 - Create NVM Subsystem with ports and host NQN"
   hitachivantara.vspone_block.vsp.hv_nvm_subsystems:
     connection_info: "{{ connection_info }}"
     spec:
@@ -55,37 +172,37 @@
           nickname: "{{ rhel_host_nqn_nickname }}"
   register: nvm_subsystem_result
 
-- name: "Step 2 - Display NVM Subsystem creation result"
+- name: "Step 3 - Display NVM Subsystem creation result"
   ansible.builtin.debug:
     var: nvm_subsystem_result
 
-- name: "Step 2 - Set storage serial and subsystem ID from creation result"
+- name: "Step 3 - Set storage serial and subsystem ID from creation result"
   ansible.builtin.set_fact:
     _serial: "{{ nvm_subsystem_result.nvm_subsystems[0].storage_serial_number }}"
     _nvmssid: "{{ '%05d' | format(nvm_subsystem_result.nvm_subsystems[0].nvm_subsystem_info.nvm_subsystem_id) }}"
 
-- name: "Step 2 - Construct subsystem NQN"
+- name: "Step 3 - Construct subsystem NQN"
   ansible.builtin.set_fact:
     constructed_nqn: "nqn.1994-04.jp.co.hitachi:nvme:storage-subsystem-sn.{{ _serial[0] }}-{{ _serial[1:] }}-nvmssid.{{ _nvmssid }}"
 
-- name: "Step 2 - Save subsystem NQN to generated vars file"
+- name: "Step 3 - Save subsystem NQN to generated vars file"
   ansible.builtin.copy:
     content: |
       ---
-      # Auto-generated by role nvme_tcp_end_to_end_rhel (Step 2)
+      # Auto-generated by role nvme_tcp_end_to_end_rhel (Step 3)
       # Constructed from storage_serial_number and nvm_subsystem_id
       rhel_subsystem_nqn: "{{ constructed_nqn }}"
     dest: "{{ role_path | dirname | dirname }}/playbooks/vars/generated_rhel_nvm_nqn.yml"
     mode: '0644'
 
-- name: "Step 2 - Display constructed subsystem NQN"
+- name: "Step 3 - Display constructed subsystem NQN"
   ansible.builtin.debug:
     msg: "Subsystem NQN saved: {{ constructed_nqn }}"
 
 ####################################################################
-# Step 3: Add namespaces and namespace paths to NVM Subsystem
+# Step 4: Add namespaces and namespace paths to NVM Subsystem
 ####################################################################
-- name: "Step 3 - Add namespaces and namespace paths to NVM Subsystem"
+- name: "Step 4 - Add namespaces and namespace paths to NVM Subsystem"
   hitachivantara.vspone_block.vsp.hv_nvm_subsystems:
     connection_info: "{{ connection_info }}"
     spec:
@@ -99,120 +216,11 @@
   loop: "{{ range(0, rhel_ldev_count) | list }}"
   register: namespace_results
 
-- name: "Step 3 - Display namespace creation results"
+- name: "Step 4 - Display namespace creation results"
   ansible.builtin.debug:
     msg: "Namespace for LDEV {{ rhel_ldev_start_id + item }} added successfully"
   loop: "{{ range(0, rhel_ldev_count) | list }}"
   when: namespace_results.results[item] is defined
-
-####################################################################
-# Step 4: Configure RHEL Networking and Install NVMe Packages
-####################################################################
-- name: "Step 4 - Verify nvme-cli is installed"
-  ansible.builtin.shell: rpm -qa | grep nvme-cli
-  delegate_to: "{{ rhel_hostname }}"
-  vars:
-    ansible_user: "{{ vault_rhel_username }}"
-    ansible_password: "{{ vault_rhel_password }}"
-    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-  register: nvme_cli_check
-  changed_when: false
-  failed_when: false
-
-- name: "Step 4 - Install nvme-cli if not present"
-  ansible.builtin.yum:
-    name: nvme-cli
-    state: present
-  delegate_to: "{{ rhel_hostname }}"
-  vars:
-    ansible_user: "{{ vault_rhel_username }}"
-    ansible_password: "{{ vault_rhel_password }}"
-    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-  when: nvme_cli_check.rc != 0
-
-- name: "Step 4 - Display installed nvme-cli package"
-  ansible.builtin.debug:
-    msg: "nvme-cli: {{ nvme_cli_check.stdout_lines | default(['not installed']) }}"
-
-- name: "Step 4 - Read host NQN from RHEL host"
-  ansible.builtin.command: cat /etc/nvme/hostnqn
-  delegate_to: "{{ rhel_hostname }}"
-  vars:
-    ansible_user: "{{ vault_rhel_username }}"
-    ansible_password: "{{ vault_rhel_password }}"
-    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-  register: rhel_host_nqn_result
-  changed_when: false
-
-- name: "Step 4 - Display RHEL host NQN"
-  ansible.builtin.debug:
-    msg: "RHEL Host NQN: {{ rhel_host_nqn_result.stdout }}"
-
-- name: "Step 4 - Configure static IP on NIC interface 1 ({{ rhel_nic1 }})"
-  ansible.builtin.shell: |
-    nmcli con mod {{ rhel_nic1 }} ipv4.addresses {{ rhel_nic1_ip }}/{{ rhel_nic_prefix }} \
-      ipv4.method manual
-    nmcli con up {{ rhel_nic1 }}
-  delegate_to: "{{ rhel_hostname }}"
-  vars:
-    ansible_user: "{{ vault_rhel_username }}"
-    ansible_password: "{{ vault_rhel_password }}"
-    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-  register: nic1_config
-  changed_when: "'successfully activated' in nic1_config.stdout | default('')"
-
-- name: "Step 4 - Configure static IP on NIC interface 2 ({{ rhel_nic2 }})"
-  ansible.builtin.shell: |
-    nmcli con mod {{ rhel_nic2 }} ipv4.addresses {{ rhel_nic2_ip }}/{{ rhel_nic_prefix }} \
-      ipv4.method manual
-    nmcli con up {{ rhel_nic2 }}
-  delegate_to: "{{ rhel_hostname }}"
-  vars:
-    ansible_user: "{{ vault_rhel_username }}"
-    ansible_password: "{{ vault_rhel_password }}"
-    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-  register: nic2_config
-  changed_when: "'successfully activated' in nic2_config.stdout | default('')"
-
-- name: "Step 4 - Verify NIC interface IP addresses"
-  ansible.builtin.command: ip addr show
-  delegate_to: "{{ rhel_hostname }}"
-  vars:
-    ansible_user: "{{ vault_rhel_username }}"
-    ansible_password: "{{ vault_rhel_password }}"
-    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-  register: ip_addr_output
-  changed_when: false
-
-- name: "Step 4 - Display NIC IP addresses"
-  ansible.builtin.debug:
-    var: ip_addr_output.stdout_lines
-
-- name: "Step 4 - Verify connectivity to storage port 1"
-  ansible.builtin.command: "ping -c 4 {{ rhel_storage_port1_ip }}"
-  delegate_to: "{{ rhel_hostname }}"
-  vars:
-    ansible_user: "{{ vault_rhel_username }}"
-    ansible_password: "{{ vault_rhel_password }}"
-    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-  register: ping_port1
-  changed_when: false
-
-- name: "Step 4 - Verify connectivity to storage port 2"
-  ansible.builtin.command: "ping -c 4 {{ rhel_storage_port2_ip }}"
-  delegate_to: "{{ rhel_hostname }}"
-  vars:
-    ansible_user: "{{ vault_rhel_username }}"
-    ansible_password: "{{ vault_rhel_password }}"
-    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-  register: ping_port2
-  changed_when: false
-
-- name: "Step 4 - Display connectivity results"
-  ansible.builtin.debug:
-    msg:
-      - "Ping to {{ rhel_storage_port1_ip }}: {{ 'SUCCESS' if ping_port1.rc == 0 else 'FAILED' }}"
-      - "Ping to {{ rhel_storage_port2_ip }}: {{ 'SUCCESS' if ping_port2.rc == 0 else 'FAILED' }}"
 
 ####################################################################
 # Step 5: NVMe/TCP Target Discovery and Connect
