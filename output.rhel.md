@@ -1,4 +1,7 @@
+# Ansible Playbook Output - NVMe/TCP End-to-End Setup
+
 visubramaniam@MQ7HY4M9M0 visa_demo % ansible-playbook site_rhel.yml
+
 [WARNING]: No inventory was parsed, only implicit localhost is available
 [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
 
@@ -49,7 +52,7 @@ ok: [localhost] => (item=9) => {
 }
 
 TASK [roles/nvme_tcp_end_to_end_rhel : Step 2 - Verify nvme-cli is installed] ********************************************************
-[WARNING]: Host 'localhost' is using the discovered Python interpreter at '/usr/bin/python3.12', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.20/reference_appendices/interpreter_discovery.html for more information.
+[WARNING]: Host 'localhost' is using the discovered Python interpreter at '/usr/bin/python3.12', but future installation of another Python interpreter could cause a different interpreter to be discovered. See <https://docs.ansible.com/ansible-core/2.20/reference_appendices/interpreter_discovery.html> for more information.
 ok: [localhost -> 192.168.53.160]
 
 TASK [roles/nvme_tcp_end_to_end_rhel : Step 2 - Install nvme-cli if not present] *****************************************************
