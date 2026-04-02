@@ -20,7 +20,7 @@
   vars_files:
     - ansible_vault_vars/ansible_vault_storage_var.yml
     - ansible_vault_vars/ansible_vault_rhel_var.yml
-    - playbooks/vars/storage_vars.yml
+    - playbooks/vars/storage_rhel_vars.yml
     - playbooks/vars/rhel_vars.yml
 
   vars:
