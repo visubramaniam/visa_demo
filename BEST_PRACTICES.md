@@ -93,7 +93,7 @@ Fabric A (VLAN 10)          Fabric B (VLAN 20)
 | 1–10 | Standard databases, file servers | Simple, easy to manage |
 | 10–64 | Virtualization (ESXi datastores), multi-tenant | Common in production |
 | 64–256 | Large-scale VDI, container storage | Monitor discovery time |
-| 256+ | Avoid | Discovery overhead increases; NVMe spec max is 1024 per subsystem, but most arrays cap at 256 |
+| 256+ | Avoid | Discovery overhead increases; most implementations limit to 256–1024 per subsystem (the NVMe base spec defines NSID as a 32-bit value with a far higher theoretical maximum; the 256–1024 figures are vendor implementation limits, not spec limits) |
 
 **Recommended starting point:** 10 namespaces per subsystem (as used in this project).
 
@@ -137,7 +137,9 @@ Total paths = Namespaces × Ports
 | Separate storage VLANs from management/vMotion | **Required** |
 | Use jumbo frames (MTU 9000) | **Recommended** |
 | Disable spanning tree on storage ports (portfast) | **Recommended** |
-| Enable flow control (PFC or global pause) | **Recommended** |
+| Enable flow control (PFC or global pause) | **Optional — evaluate based on environment** (see note below) |
+
+> **Flow control note:** PFC (Priority Flow Control / 802.1Qbb) is a hard requirement for lossless RoCEv2 fabrics, **not** NVMe/TCP. Deploying PFC for TCP-based storage adds significant switch configuration complexity (DCBX, ETS, PFC watchdog) with minimal benefit, since TCP natively handles congestion and retransmission. Global pause (802.3x) can reduce TCP retransmits under burst conditions but is a blunt instrument that risks head-of-line blocking across all traffic classes on a port. For NVMe/TCP, proper TCP tuning (buffer sizes, SACK, window scaling) is the primary performance lever. Evaluate flow control only if burst-induced retransmits are confirmed by measurement.
 
 ### IP Addressing
 
@@ -155,7 +157,18 @@ sysctl -w net.core.wmem_max=4194304
 sysctl -w net.ipv4.tcp_rmem="4096 87380 4194304"
 sysctl -w net.ipv4.tcp_wmem="4096 65536 4194304"
 
+# SACK — critical for efficient retransmit recovery on storage networks
+sysctl -w net.ipv4.tcp_sack=1
+
+# Timestamps — required for accurate RTT measurement at high throughput
+sysctl -w net.ipv4.tcp_timestamps=1
+
+# Low-latency mode — where supported, prioritizes latency over throughput aggregation
+sysctl -w net.ipv4.tcp_low_latency=1
+
 # Persist in /etc/sysctl.d/99-nvme-tcp.conf
+# For latency-sensitive workloads, also consider setting TCP_QUICKACK at the
+# application level or reducing delayed ACK via tcp_delack_min.
 ```
 
 ### Firewall Rules
@@ -173,7 +186,7 @@ sysctl -w net.ipv4.tcp_wmem="4096 65536 4194304"
 
 | Feature | NVMe Native Multipath | DM-Multipath (multipathd) |
 |---------|----------------------|--------------------------|
-| Kernel support | Built-in (4.15+) | Requires daemon |
+| Kernel support | Built-in (4.15+, production-quality from 5.x; RHEL 8's backported 4.18 kernel includes multipath fixes not present in upstream 4.18 — the version number alone can be misleading) | Requires daemon |
 | Namespace presentation | Single `/dev/nvmeXnY` per namespace | `/dev/dm-X` mapper device |
 | IO policy | round-robin, numa | round-robin, queue-length, service-time |
 | Overhead | Minimal (kernel-level) | Higher (userspace daemon) |
@@ -278,7 +291,7 @@ This reads `/etc/nvme/discovery.conf` on boot and re-establishes connections.
 |-----------|---------|-------|-------|
 | `nr_io_queues` | CPU count | CPU count or less | One queue per CPU core; reduce if many namespaces compete |
 | `queue_size` | 128 | 128–1024 | Increase for sequential workloads; monitor memory usage |
-| `keep_alive_tmo` | 5 (sec) | 5–30 | Increase in lossy networks to avoid false path failures |
+| `keep_alive_tmo` | 30 (sec, implementation-specific — some kernels/controllers negotiate a different value; 5 s has been observed on certain setups but is not the universal default) | 30–60 | Increase in lossy networks to avoid false path failures; avoid very short values as they generate frequent keep-alive probes |
 
 ### Workload-Specific Guidance
 
@@ -386,7 +399,7 @@ ss -tnp | grep :4420
 NVMe/TCP supports in-band TLS (NVMe-TCP specification 1.1). When available:
 - Use TLS 1.3 for encryption of data in transit
 - Deploy per-host certificates for mutual authentication
-- Note: TLS adds latency (~5–10%); evaluate for latency-sensitive workloads
+- Note: TLS adds approximately 5–10% **throughput** overhead on hosts with AES-NI hardware offload; latency impact for small-block IOPS (e.g., 4K random reads in OLTP workloads) can be proportionally higher, particularly on hosts without AES-NI or at very high IOPS rates where per-PDU encryption cost compounds. Evaluate carefully for latency-sensitive workloads.
 
 ---
 
