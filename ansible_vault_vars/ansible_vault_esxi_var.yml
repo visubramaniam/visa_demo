@@ -2,7 +2,7 @@
 # ESXi host credentials - encrypt this file with Ansible Vault
 # ansible-vault encrypt ansible_vault_vars/ansible_vault_esxi_var.yml
 
-esxi_hostname: "192.168.55.197"
+esxi_hostname: "192.168.55.198"
 vault_esxi_username: "root"
 vault_esxi_password: "Passw0rd!"
 
