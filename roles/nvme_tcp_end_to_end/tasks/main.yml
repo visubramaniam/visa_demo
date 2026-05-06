@@ -273,6 +273,23 @@
   ansible.builtin.debug:
     var: nvme_adapter_list.stdout_lines
 
+- name: "Step 5 - Parse NVMe/TCP adapter names from adapter list"
+  ansible.builtin.set_fact:
+    nvme_tcp_adapters: >-
+      {{ nvme_adapter_list.stdout_lines
+         | select('search', 'nvmetcp')
+         | map('regex_replace', '^(\S+).*', '\1')
+         | list }}
+
+- name: "Step 5 - Fail if fewer than 2 NVMe/TCP adapters were found"
+  ansible.builtin.fail:
+    msg: "Expected at least 2 nvmetcp adapters but found {{ nvme_tcp_adapters | length }}: {{ nvme_tcp_adapters }}"
+  when: nvme_tcp_adapters | length < 2
+
+- name: "Step 5 - Display parsed NVMe/TCP adapter names"
+  ansible.builtin.debug:
+    msg: "Found NVMe/TCP adapters: adapter_1={{ nvme_tcp_adapters[0] }}, adapter_2={{ nvme_tcp_adapters[1] }}"
+
 ####################################################################
 # Step 6: Add NVMe/TCP target controllers for multipath
 ####################################################################
@@ -293,7 +310,7 @@
 - name: "Step 6 - Add NVMe/TCP controller for storage port 1"
   ansible.builtin.raw: >-
     esxcli nvme fabrics connect
-    --adapter vmhba64
+    --adapter {{ nvme_tcp_adapters[0] }}
     --ip-address {{ storage_port1_ip }}
     --port-number {{ nvme_tcp_port }}
     --subsystem-nqn {{ subsystem_nqn }}
@@ -315,7 +332,7 @@
 - name: "Step 6 - Add NVMe/TCP controller for storage port 2"
   ansible.builtin.raw: >-
     esxcli nvme fabrics connect
-    --adapter vmhba65
+    --adapter {{ nvme_tcp_adapters[1] }}
     --ip-address {{ storage_port2_ip }}
     --port-number {{ nvme_tcp_port }}
     --subsystem-nqn {{ subsystem_nqn }}
