@@ -4,8 +4,8 @@
 ####################################################################
 
 # 100Gbps physical NIC names (Mellanox dual-port)
-vmnic_100g_1: "vmnic6"
-vmnic_100g_2: "vmnic7"
+vmnic_100g_1: "vmnic2"
+vmnic_100g_2: "vmnic3"
 
 # vSwitch configuration - one vSwitch per NIC for NVMe/TCP port binding
 vswitch1_name: "vSwitch_NVMe_TCP_1"

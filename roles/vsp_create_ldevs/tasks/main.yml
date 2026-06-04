@@ -4,6 +4,14 @@
 # Creates LDEVs on VSP One Block 28 for NVMe/TCP namespaces
 ####################################################################
 
+- name: Check existing LDEV state
+  hitachivantara.vspone_block.vsp.hv_ldev_facts:
+    connection_info: "{{ connection_info }}"
+    spec:
+      ldev_id: "{{ (ldev_start_id | int) + (item | int) }}"
+  loop: "{{ range(0, ldev_count | int) | list }}"
+  register: ldev_check
+
 - name: Create LDEVs for NVMe/TCP namespaces
   hitachivantara.vspone_block.vsp.hv_ldev:
     connection_info: "{{ connection_info }}"
@@ -15,10 +23,11 @@
       capacity_saving: disabled
       name: "{{ ldev_name_prefix }}_{{ '%04d' | format((ldev_start_id | int) + (item | int)) }}"
   loop: "{{ range(0, ldev_count | int) | list }}"
+  when: >-
+    ldev_check.results[item].ansible_facts.volumes[0].emulation_type == "NOT DEFINED"
   register: ldev_results
 
 - name: Display created LDEV details
   ansible.builtin.debug:
-    msg: "LDEV {{ ldev_start_id + item }} created successfully"
-  loop: "{{ range(0, ldev_count) | list }}"
-  when: ldev_results.results[item] is defined
+    msg: "LDEV {{ (ldev_start_id | int) + (item | int) }}: {{ 'created' if ldev_results.results[item].changed | default(false) else 'skipped (already defined)' }}"
+  loop: "{{ range(0, ldev_count | int) | list }}"
