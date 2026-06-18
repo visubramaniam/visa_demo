@@ -7,14 +7,14 @@
 pool_id: 0
 
 # LDEV configuration - 10 LDEVs of 10GB each
-ldev_start_id: 7411
+ldev_start_id: 4411
 ldev_count: 2
-ldev_size: "50GB"
+ldev_size: "1024GB"
 ldev_name_prefix: "nvme_tcp_ldev"
 
 # NVM Subsystem configuration
-subsystem_id: 5
-nvm_subsystem_name: "NVMeTCP_VSPOneB28_V2"
+subsystem_id: 15
+nvm_subsystem_name: "NVMeTCP_VSPOneB28_V5"
 nvm_subsystem_host_mode: "VMWARE_EX"
 
 # 100G NVMe/TCP storage ports
@@ -23,5 +23,5 @@ storage_ports:
   - "CL2-D"
 
 # ESXi Host NQN - obtain from ESXi host with: esxcli nvme info get
-host_nqn: "nqn.2014-08.hv.coe:nvme:nvmeesxi"
+host_nqn: "nqn.2014-08.local.acoe:nvme:demoesxi"
 host_nqn_nickname: "esxi_host_nqn"

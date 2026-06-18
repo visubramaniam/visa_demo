@@ -4,8 +4,8 @@
 ####################################################################
 
 # 100Gbps physical NIC names (Mellanox dual-port)
-vmnic_100g_1: "vmnic2"
-vmnic_100g_2: "vmnic3"
+vmnic_100g_1: "vmnic6"
+vmnic_100g_2: "vmnic7"
 
 # vSwitch configuration - one vSwitch per NIC for NVMe/TCP port binding
 vswitch1_name: "vSwitch_NVMe_TCP_1"
@@ -15,12 +15,12 @@ vswitch_mtu: 9000
 # VMkernel adapter configuration
 # Subnet 1: ESXi vmk1 <-> Storage CL3-A (192.168.52.x)
 vmk1_portgroup: "NVMe_TCP_PG1"
-vmk1_ip: "172.28.55.194"
+vmk1_ip: "172.28.55.195"
 vmk1_subnet: "255.255.0.0"
 
 # Subnet 2: ESXi vmk2 <-> Storage CL4-A (192.168.52.x)
 vmk2_portgroup: "NVMe_TCP_PG2"
-vmk2_ip: "172.29.55.194"
+vmk2_ip: "172.29.55.195"
 vmk2_subnet: "255.255.0.0"
 
 # Storage port IPs for NVMe/TCP target controllers

@@ -135,8 +135,8 @@ nqn.1994-04.jp.co.hitachi:nvme:storage-subsystem-sn.8-40498-nvmssid.00000
 
 | Adapter | Adapter Qualified Name | Transport Type | Driver | Associated Device |
 |---------|----------------------|----------------|--------|-------------------|
-| vmhba64 | aqn:nvmetcp:58-a2-e1-11-dc-4c-T | TCP | nvmetcp | vmnic2 |
-| vmhba65 | aqn:nvmetcp:58-a2-e1-11-dc-4d-T | TCP | nvmetcp | vmnic3 |
+| vmhba66 | aqn:nvmetcp:58-a2-e1-11-f5-5c-T | TCP | nvmetcp | vmnic6 |
+| vmhba67 | aqn:nvmetcp:58-a2-e1-11-f5-5d-T | TCP | nvmetcp | vmnic7 |
 
 ---
 
@@ -153,8 +153,8 @@ nqn.1994-04.jp.co.hitachi:nvme:storage-subsystem-sn.8-40498-nvmssid.00000
 
 | NQN + Adapter + Target | Controller # | Adapter | Transport | Online | Type | Keep Alive | IO Queues | Queue Size |
 |------------------------|-------------|---------|-----------|--------|------|-----------|-----------|------------|
-| ...nvmssid.00000#vmhba64#192.168.52.31:4420 | 256 | vmhba64 | TCP | true | I/O | 10 | 4 | 128 |
-| ...nvmssid.00000#vmhba65#192.168.52.32:4420 | 257 | vmhba65 | TCP | true | I/O | 10 | 4 | 128 |
+| ...nvmssid.00015#vmhba66#172.28.55.196:4420 | 256 | vmhba66 | TCP | true | I/O | 10 | 4 | 128 |
+| ...nvmssid.00015#vmhba67#172.29.55.196:4420 | 257 | vmhba67 | TCP | true | I/O | 10 | 4 | 128 |
 
 ### NVMe/TCP Namespaces Visible to ESXi (20 paths = 10 namespaces x 2 controllers)
 

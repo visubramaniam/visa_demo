@@ -1,0 +1,326 @@
+---
+####################################################################
+# Cleanup Playbook: Remove ESXi NVMe/TCP Configuration
+# Reverses the setup created by playbooks 04, 05, and 06
+# Must be run in this order to safely remove all resources
+####################################################################
+- name: Cleanup ESXi NVMe/TCP Configuration
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - ../ansible_vault_vars/ansible_vault_esxi_var.yml
+    - vars/esxi_vars.yml
+
+  tasks:
+    ####################################################################
+    # Phase 1: Disconnect NVMe/TCP Controllers (Reverse of Playbook 06)
+    ####################################################################
+    - name: Load auto-generated NVMe/TCP adapter names
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/vars/generated_nvme_adapters.yml"
+      ignore_errors: true
+
+    - name: Load auto-generated subsystem NQN
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/vars/generated_nvm_nqn.yml"
+      ignore_errors: true
+
+    - name: Disconnect NVMe/TCP controller from storage port 1
+      ansible.builtin.raw: >-
+        esxcli nvme fabrics disconnect
+        --adapter {{ nvme_tcp_adapter_1 }}
+        --subsystem-nqn {{ subsystem_nqn }}
+      delegate_to: "{{ esxi_hostname }}"
+      vars:
+        ansible_user: "{{ vault_esxi_username }}"
+        ansible_password: "{{ vault_esxi_password }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+      register: disconnect1_result
+      failed_when:
+        - disconnect1_result.rc != 0
+        - "'No such device' not in (disconnect1_result.stdout | default(''))"
+        - "'not found' not in (disconnect1_result.stdout | default(''))"
+      changed_when: disconnect1_result.rc == 0
+      ignore_errors: true
+
+    - name: Display disconnect 1 result
+      ansible.builtin.debug:
+        var: disconnect1_result
+        verbosity: 1
+
+    - name: Disconnect NVMe/TCP controller from storage port 2
+      ansible.builtin.raw: >-
+        esxcli nvme fabrics disconnect
+        --adapter {{ nvme_tcp_adapter_2 }}
+        --subsystem-nqn {{ subsystem_nqn }}
+      delegate_to: "{{ esxi_hostname }}"
+      vars:
+        ansible_user: "{{ vault_esxi_username }}"
+        ansible_password: "{{ vault_esxi_password }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+      register: disconnect2_result
+      failed_when:
+        - disconnect2_result.rc != 0
+        - "'No such device' not in (disconnect2_result.stdout | default(''))"
+        - "'not found' not in (disconnect2_result.stdout | default(''))"
+      changed_when: disconnect2_result.rc == 0
+      ignore_errors: true
+
+    - name: Display disconnect 2 result
+      ansible.builtin.debug:
+        var: disconnect2_result
+        verbosity: 1
+
+    ####################################################################
+    # Phase 2: Disable NVMe/TCP Adapters (Reverse of Playbook 05)
+    ####################################################################
+    - name: Disable NVMe/TCP adapter for vmnic_100g_1
+      ansible.builtin.raw: >-
+        esxcli nvme fabrics disable
+        --protocol TCP
+        --device {{ vmnic_100g_1 }}
+      delegate_to: "{{ esxi_hostname }}"
+      vars:
+        ansible_user: "{{ vault_esxi_username }}"
+        ansible_password: "{{ vault_esxi_password }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+      register: disable_adapter1_result
+      failed_when:
+        - disable_adapter1_result.rc != 0
+        - "'not enabled' not in (disable_adapter1_result.stdout | default(''))"
+      changed_when: disable_adapter1_result.rc == 0
+      ignore_errors: true
+
+    - name: Display disable adapter 1 result
+      ansible.builtin.debug:
+        var: disable_adapter1_result
+        verbosity: 1
+
+    - name: Disable NVMe/TCP adapter for vmnic_100g_2
+      ansible.builtin.raw: >-
+        esxcli nvme fabrics disable
+        --protocol TCP
+        --device {{ vmnic_100g_2 }}
+      delegate_to: "{{ esxi_hostname }}"
+      vars:
+        ansible_user: "{{ vault_esxi_username }}"
+        ansible_password: "{{ vault_esxi_password }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+      register: disable_adapter2_result
+      failed_when:
+        - disable_adapter2_result.rc != 0
+        - "'not enabled' not in (disable_adapter2_result.stdout | default(''))"
+      changed_when: disable_adapter2_result.rc == 0
+      ignore_errors: true
+
+    - name: Display disable adapter 2 result
+      ansible.builtin.debug:
+        var: disable_adapter2_result
+        verbosity: 1
+
+    ####################################################################
+    # Phase 3: Remove NVMeTCP Tags and VMkernel Adapters (Reverse of Playbook 04)
+    ####################################################################
+    - name: Remove NVMeTCP tag from VMkernel adapter 1
+      ansible.builtin.raw: "esxcli network ip interface tag remove -i vmk1 -t NVMeTCP"
+      delegate_to: "{{ esxi_hostname }}"
+      vars:
+        ansible_user: "{{ vault_esxi_username }}"
+        ansible_password: "{{ vault_esxi_password }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+      register: vmk1_untag_result
+      failed_when:
+        - vmk1_untag_result.rc != 0
+        - "'not found' not in (vmk1_untag_result.stdout | default(''))"
+      changed_when: vmk1_untag_result.rc == 0
+      ignore_errors: true
+
+    - name: Display VMkernel adapter 1 untagging result
+      ansible.builtin.debug:
+        var: vmk1_untag_result
+        verbosity: 1
+
+    - name: Remove NVMeTCP tag from VMkernel adapter 2
+      ansible.builtin.raw: "esxcli network ip interface tag remove -i vmk2 -t NVMeTCP"
+      delegate_to: "{{ esxi_hostname }}"
+      vars:
+        ansible_user: "{{ vault_esxi_username }}"
+        ansible_password: "{{ vault_esxi_password }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+      register: vmk2_untag_result
+      failed_when:
+        - vmk2_untag_result.rc != 0
+        - "'not found' not in (vmk2_untag_result.stdout | default(''))"
+      changed_when: vmk2_untag_result.rc == 0
+      ignore_errors: true
+
+    - name: Display VMkernel adapter 2 untagging result
+      ansible.builtin.debug:
+        var: vmk2_untag_result
+        verbosity: 1
+
+    - name: Remove VMkernel adapter 1 via esxcli
+      ansible.builtin.raw: "esxcli network ip interface remove -i vmk1"
+      delegate_to: "{{ esxi_hostname }}"
+      vars:
+        ansible_user: "{{ vault_esxi_username }}"
+        ansible_password: "{{ vault_esxi_password }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+      register: vmk1_remove_result
+      failed_when:
+        - vmk1_remove_result.rc != 0
+        - "'not found' not in (vmk1_remove_result.stdout | default(''))"
+      changed_when: vmk1_remove_result.rc == 0
+      ignore_errors: true
+
+    - name: Display VMkernel adapter 1 removal result
+      ansible.builtin.debug:
+        var: vmk1_remove_result
+        verbosity: 1
+
+    - name: Remove VMkernel adapter 2 via esxcli
+      ansible.builtin.raw: "esxcli network ip interface remove -i vmk2"
+      delegate_to: "{{ esxi_hostname }}"
+      vars:
+        ansible_user: "{{ vault_esxi_username }}"
+        ansible_password: "{{ vault_esxi_password }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+      register: vmk2_remove_result
+      failed_when:
+        - vmk2_remove_result.rc != 0
+        - "'not found' not in (vmk2_remove_result.stdout | default(''))"
+      changed_when: vmk2_remove_result.rc == 0
+      ignore_errors: true
+
+    - name: Display VMkernel adapter 2 removal result
+      ansible.builtin.debug:
+        var: vmk2_remove_result
+        verbosity: 1
+
+    ####################################################################
+    # Phase 4: Remove Portgroups
+    ####################################################################
+    - name: Remove portgroup from vSwitch1
+      community.vmware.vmware_portgroup:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        hosts:
+          - "{{ esxi_hostname }}"
+        switch: "{{ vswitch1_name }}"
+        portgroup: "{{ vmk1_portgroup }}"
+        state: absent
+      register: pg1_remove_result
+      ignore_errors: true
+
+    - name: Display portgroup 1 removal result
+      ansible.builtin.debug:
+        var: pg1_remove_result
+        verbosity: 1
+
+    - name: Remove portgroup from vSwitch2
+      community.vmware.vmware_portgroup:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        hosts:
+          - "{{ esxi_hostname }}"
+        switch: "{{ vswitch2_name }}"
+        portgroup: "{{ vmk2_portgroup }}"
+        state: absent
+      register: pg2_remove_result
+      ignore_errors: true
+
+    - name: Display portgroup 2 removal result
+      ansible.builtin.debug:
+        var: pg2_remove_result
+        verbosity: 1
+
+    ####################################################################
+    # Phase 5: Remove vSwitches
+    ####################################################################
+    - name: Remove vSwitch1
+      community.vmware.vmware_vswitch:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        esxi_hostname: "{{ esxi_hostname }}"
+        switch: "{{ vswitch1_name }}"
+        state: absent
+      register: vswitch1_remove_result
+      ignore_errors: true
+
+    - name: Display vSwitch1 removal result
+      ansible.builtin.debug:
+        var: vswitch1_remove_result
+        verbosity: 1
+
+    - name: Remove vSwitch2
+      community.vmware.vmware_vswitch:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ vault_esxi_username }}"
+        password: "{{ vault_esxi_password }}"
+        validate_certs: false
+        esxi_hostname: "{{ esxi_hostname }}"
+        switch: "{{ vswitch2_name }}"
+        state: absent
+      register: vswitch2_remove_result
+      ignore_errors: true
+
+    - name: Display vSwitch2 removal result
+      ansible.builtin.debug:
+        var: vswitch2_remove_result
+        verbosity: 1
+
+    ####################################################################
+    # Final: Verification and cleanup
+    ####################################################################
+    - name: Verify vSwitches are removed
+      ansible.builtin.raw: "esxcli network vswitch standard list"
+      delegate_to: "{{ esxi_hostname }}"
+      vars:
+        ansible_user: "{{ vault_esxi_username }}"
+        ansible_password: "{{ vault_esxi_password }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+      register: vswitch_list
+      ignore_errors: true
+
+    - name: Display remaining vSwitches
+      ansible.builtin.debug:
+        var: vswitch_list.stdout_lines
+        verbosity: 1
+
+    - name: Verify NVMe controllers are disconnected
+      ansible.builtin.raw: "esxcli nvme controller list"
+      delegate_to: "{{ esxi_hostname }}"
+      vars:
+        ansible_user: "{{ vault_esxi_username }}"
+        ansible_password: "{{ vault_esxi_password }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+      register: nvme_controller_final
+      ignore_errors: true
+
+    - name: Display remaining NVMe controllers
+      ansible.builtin.debug:
+        var: nvme_controller_final.stdout_lines
+        verbosity: 1
+
+    ####################################################################
+    # Cleanup: Remove generated variable files (optional)
+    ####################################################################
+    - name: Display cleanup reminder
+      ansible.builtin.debug:
+        msg: |
+          ====================================================================
+          Cleanup Complete!
+          ====================================================================
+          Generated variable files can be cleaned up:
+            - {{ playbook_dir }}/vars/generated_nvme_adapters.yml
+            - {{ playbook_dir }}/vars/generated_nvm_nqn.yml
+          
+          These will be regenerated if you run playbooks 02 and 05 again.
+          ====================================================================

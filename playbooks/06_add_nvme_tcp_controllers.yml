@@ -53,16 +53,47 @@
       ansible.builtin.debug:
         msg: "Using subsystem NQN: {{ subsystem_nqn }}"
 
+    - name: Test connectivity to storage port 1 (NVMe/TCP)
+      ansible.builtin.raw: "nc -zv -w 2 {{ storage_port1_ip }} {{ nvme_tcp_port }}"
+      delegate_to: "{{ esxi_hostname }}"
+      vars:
+        ansible_user: "{{ vault_esxi_username }}"
+        ansible_password: "{{ vault_esxi_password }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+      register: port1_connectivity
+      ignore_errors: true
+
+    - name: Display port 1 connectivity result
+      ansible.builtin.debug:
+        msg: |
+          Storage Port 1 Connectivity Test ({{ storage_port1_ip }}:{{ nvme_tcp_port }}):
+          - Return Code: {{ port1_connectivity.rc }}
+          - Stdout: {{ port1_connectivity.stdout }}
+          - Stderr: {{ port1_connectivity.stderr }}
+
+    - name: Test connectivity to storage port 2 (NVMe/TCP)
+      ansible.builtin.raw: "nc -zv -w 2 {{ storage_port2_ip }} {{ nvme_tcp_port }}"
+      delegate_to: "{{ esxi_hostname }}"
+      vars:
+        ansible_user: "{{ vault_esxi_username }}"
+        ansible_password: "{{ vault_esxi_password }}"
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+      register: port2_connectivity
+      ignore_errors: true
+
+    - name: Display port 2 connectivity result
+      ansible.builtin.debug:
+        msg: |
+          Storage Port 2 Connectivity Test ({{ storage_port2_ip }}:{{ nvme_tcp_port }}):
+          - Return Code: {{ port2_connectivity.rc }}
+          - Stdout: {{ port2_connectivity.stdout }}
+          - Stderr: {{ port2_connectivity.stderr }}
+
     ####################################################################
     # Task: Add NVMe/TCP controller for Storage Port 1 (CL3-A)
     ####################################################################
     - name: Add NVMe/TCP controller for storage port 1
-      ansible.builtin.raw: >-
-        esxcli nvme fabrics connect
-        --adapter {{ nvme_tcp_adapter_1 }}
-        --ip-address {{ storage_port1_ip }}
-        --port-number {{ nvme_tcp_port }}
-        --subsystem-nqn {{ subsystem_nqn }}
+      ansible.builtin.raw: 'esxcli nvme fabrics connect --adapter {{ nvme_tcp_adapter_1 }} --ip-address {{ storage_port1_ip }} --port-number {{ nvme_tcp_port }} --subsystem-nqn "{{ subsystem_nqn }}"'
       delegate_to: "{{ esxi_hostname }}"
       vars:
         ansible_user: "{{ vault_esxi_username }}"
@@ -74,20 +105,11 @@
         - "'already connected' not in (controller1_result.stdout | default(''))"
       changed_when: controller1_result.rc == 0
 
-    - name: Display controller 1 result
-      ansible.builtin.debug:
-        var: controller1_result
-
     ####################################################################
     # Task: Add NVMe/TCP controller for Storage Port 2 (CL4-A)
     ####################################################################
     - name: Add NVMe/TCP controller for storage port 2
-      ansible.builtin.raw: >-
-        esxcli nvme fabrics connect
-        --adapter {{ nvme_tcp_adapter_2 }}
-        --ip-address {{ storage_port2_ip }}
-        --port-number {{ nvme_tcp_port }}
-        --subsystem-nqn {{ subsystem_nqn }}
+      ansible.builtin.raw: 'esxcli nvme fabrics connect --adapter {{ nvme_tcp_adapter_2 }} --ip-address {{ storage_port2_ip }} --port-number {{ nvme_tcp_port }} --subsystem-nqn "{{ subsystem_nqn }}"'
       delegate_to: "{{ esxi_hostname }}"
       vars:
         ansible_user: "{{ vault_esxi_username }}"
@@ -98,6 +120,10 @@
         - controller2_result.rc != 0
         - "'already connected' not in (controller2_result.stdout | default(''))"
       changed_when: controller2_result.rc == 0
+
+    - name: Display controller 1 result
+      ansible.builtin.debug:
+        var: controller1_result
 
     - name: Display controller 2 result
       ansible.builtin.debug:
